@@ -10,6 +10,9 @@ rev = "v4.30.0"
 [[lean_lib]]
 name = "LeanErm"
 
+[[lean_lib]]
+name = "LearningTheory"
+
 [[lean_exe]]
 name = "leanerm"
 root = "Main"
