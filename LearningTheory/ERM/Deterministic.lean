@@ -7,19 +7,52 @@ namespace ERM
 
 universe u
 
-/-- `x` is a `δ`-approximate minimizer of `f` over the whole domain. -/
-def ApproxMin {α : Type u} (f : α → ℝ) (x : α) (δ : ℝ) : Prop :=
-  ∀ y, f x ≤ f y + δ
-
 /--
 Deterministic approximate-minimizer transfer.
 
-If `fhat` is uniformly within `ε` of `f`, and `x` is a `δ`-approximate
-minimizer of `fhat`, then `x` is a `(2ε + δ)`-approximate minimizer of `f`.
+If `g` is uniformly within `ε` of `f`, and `x` is a `δ`-approximate
+minimizer of `g`, then `x` is a `(2ε + δ)`-approximate minimizer of `f`.
 
 This is the deterministic algebraic core used in ERM oracle inequalities.
 It does not prove any probabilistic uniform-deviation bound.
 -/
+theorem approx_minimizer_of_uniform_close
+    {α : Type u}
+    (f g : α → ℝ)
+    (x : α)
+    (ε δ : ℝ)
+    (hε : ∀ y, |g y - f y| ≤ ε)
+    (hx : ∀ y, g x ≤ g y + δ) :
+    ∀ y, f x ≤ f y + 2 * ε + δ := by
+  intro y
+  have hx_abs : |g x - f x| ≤ ε := hε x
+  have hy_abs : |g y - f y| ≤ ε := hε y
+  have hx_lower : -ε ≤ g x - f x := (abs_le.mp hx_abs).1
+  have hy_upper : g y - f y ≤ ε := (abs_le.mp hy_abs).2
+  have hx' : f x ≤ g x + ε := by linarith
+  have hy' : g y ≤ f y + ε := by linarith
+  have hm : g x ≤ g y + δ := hx y
+  linarith
+
+/--
+Exact-minimizer version of `approx_minimizer_of_uniform_close`.
+
+This is the common ERM case where `x` exactly minimizes the surrogate objective.
+-/
+theorem exact_minimizer_of_uniform_close
+    {α : Type u}
+    (f g : α → ℝ)
+    (x : α)
+    (ε : ℝ)
+    (hε : ∀ y, |g y - f y| ≤ ε)
+    (hx : ∀ y, g x ≤ g y) :
+    ∀ y, f x ≤ f y + 2 * ε := by
+  intro y
+  have h := approx_minimizer_of_uniform_close
+    f g x ε 0 hε (by intro z; simpa using hx z) y
+  linarith
+
+/-- Backward-compatible name for `approx_minimizer_of_uniform_close`. -/
 theorem le_of_abs_sub_le_of_forall_le_add
     {α : Type u}
     (f fhat : α → ℝ)
@@ -27,22 +60,10 @@ theorem le_of_abs_sub_le_of_forall_le_add
     (ε δ : ℝ)
     (hdev : ∀ y, |fhat y - f y| ≤ ε)
     (hmin : ∀ y, fhat x ≤ fhat y + δ) :
-    ∀ y, f x ≤ f y + 2 * ε + δ := by
-  intro y
-  have hx_abs : |fhat x - f x| ≤ ε := hdev x
-  have hy_abs : |fhat y - f y| ≤ ε := hdev y
-  have hx_lower : -ε ≤ fhat x - f x := (abs_le.mp hx_abs).1
-  have hy_upper : fhat y - f y ≤ ε := (abs_le.mp hy_abs).2
-  have hx : f x ≤ fhat x + ε := by linarith
-  have hy : fhat y ≤ f y + ε := by linarith
-  have hm : fhat x ≤ fhat y + δ := hmin y
-  linarith
+    ∀ y, f x ≤ f y + 2 * ε + δ :=
+  approx_minimizer_of_uniform_close f fhat x ε δ hdev hmin
 
-/--
-Exact-minimizer version of `le_of_abs_sub_le_of_forall_le_add`.
-
-This is the common ERM case where `x` exactly minimizes the surrogate objective.
--/
+/-- Backward-compatible name for `exact_minimizer_of_uniform_close`. -/
 theorem le_of_abs_sub_le_of_forall_le
     {α : Type u}
     (f fhat : α → ℝ)
@@ -50,10 +71,28 @@ theorem le_of_abs_sub_le_of_forall_le
     (ε : ℝ)
     (hdev : ∀ y, |fhat y - f y| ≤ ε)
     (hmin : ∀ y, fhat x ≤ fhat y) :
-    ∀ y, f x ≤ f y + 2 * ε := by
-  intro y
-  have h := le_of_abs_sub_le_of_forall_le_add
-    f fhat x ε 0 hdev (by intro z; simpa using hmin z) y
+    ∀ y, f x ≤ f y + 2 * ε :=
+  exact_minimizer_of_uniform_close f fhat x ε hdev hmin
+
+/-- Exact-minimizer transfer on a set via `IsMinOn`. -/
+theorem IsMinOn.approx_minimizer_of_uniform_close
+    {α : Type u}
+    {s : Set α}
+    {f g : α → ℝ}
+    {x : α}
+    {ε : ℝ}
+    (hε : ∀ y ∈ s, |g y - f y| ≤ ε)
+    (hx : IsMinOn g s x)
+    (hxmem : x ∈ s) :
+    ∀ y ∈ s, f x ≤ f y + 2 * ε := by
+  intro y hy
+  have hx_abs : |g x - f x| ≤ ε := hε x hxmem
+  have hy_abs : |g y - f y| ≤ ε := hε y hy
+  have hm : g x ≤ g y := (isMinOn_iff.mp hx) y hy
+  have hx_lower : -ε ≤ g x - f x := (abs_le.mp hx_abs).1
+  have hy_upper : g y - f y ≤ ε := (abs_le.mp hy_abs).2
+  have hx' : f x ≤ g x + ε := by linarith
+  have hy' : g y ≤ f y + ε := by linarith
   linarith
 
 example
@@ -84,7 +123,7 @@ def UniformDeviationLe (R Rhat : H → ℝ) (ε : ℝ) : Prop :=
 
 /-- `hhat` is an `α`-approximate empirical risk minimizer for `Rhat`. -/
 def ApproxERM (Rhat : H → ℝ) (hhat : H) (α : ℝ) : Prop :=
-  ApproxMin Rhat hhat α
+  ∀ h : H, Rhat hhat ≤ Rhat h + α
 
 /-- `hhat` has empirical risk within `α` of a chosen GLB value `rhatStar`. -/
 def ApproxERMAtGLB (Rhat : H → ℝ) (hhat : H) (rhatStar α : ℝ) : Prop :=
@@ -116,7 +155,7 @@ theorem approxERM_oracle_comparator
     (herm : ApproxERM Rhat hhat α) :
     ∀ h : H, R hhat ≤ R h + 2 * ε + α := by
   simpa [UniformDeviationLe, ApproxERM] using
-    le_of_abs_sub_le_of_forall_le_add R Rhat hhat ε α hdev herm
+    approx_minimizer_of_uniform_close R Rhat hhat ε α hdev herm
 
 /-- Convert an empirical GLB-gap assumption into comparator-form `ApproxERM`. -/
 theorem approxERM_of_IsGLB_range
