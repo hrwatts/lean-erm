@@ -1,0 +1,15 @@
+name = "LeanErm"
+version = "0.1.0"
+defaultTargets = ["leanerm"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.30.0"
+
+[[lean_lib]]
+name = "LeanErm"
+
+[[lean_exe]]
+name = "leanerm"
+root = "Main"
