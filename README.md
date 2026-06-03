@@ -1,6 +1,6 @@
 # lean-erm
 
-This repository currently formalizes the deterministic core behind a standard ERM oracle inequality.
+This repository currently formalizes deterministic objective-transfer lemmas for ERM-style arguments.
 
 The main theorem says: if two real-valued objectives `f` and `fhat` are uniformly within `ε`, and `x` is a `δ`-approximate minimizer of `fhat`, then `x` is a `(2ε + δ)`-approximate minimizer of `f`.
 
