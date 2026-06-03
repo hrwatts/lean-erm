@@ -14,7 +14,3 @@ lake env lean -T 0 LearningTheory/ERM/Deterministic.lean
 ```
 
 Expected result: both commands complete successfully.
-
-## Public artifact policy
-
-Public exports should contain only sanitized theorem statements, examples, documentation, and source files. Do not include private notes, chat logs, local workspace paths, or machine-specific metadata.
