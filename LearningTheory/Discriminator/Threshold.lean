@@ -5,6 +5,8 @@ import Mathlib.Tactic
 namespace LearningTheory
 namespace Discriminator
 
+universe u
+
 /--
 If a score `s` is uniformly within `ε` of a target score `η`, then the
 threshold rules induced by `s` and `η` can disagree only where `η` is within
